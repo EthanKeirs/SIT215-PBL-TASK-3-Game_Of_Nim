@@ -2,7 +2,8 @@
 This code is a mixture combination of some my own code and had taken reference or piece of code from the following:
 Geeks for Geeks (Geeks for Geeks 2020),
 Jason andrea (andrea 2020),
-Batterystaples (Batterystaples 2019)'''
+Batterystaples (Batterystaples 2019)
+Links can be found in the submmited document and this code will includes both my own and there incode documentation'''
 
 import random #module implements pseudo-random number generators for various distributions.
 import time #This module provides various time-related functions.
@@ -42,18 +43,17 @@ def getGameMode():
 def askPlayAgain():
     '''
     Function to print and ask to the user whether the user want to play again or not.
-    Will return True or False based on the user input. If the input is 1, return True.
-    Otherwise, return False.
-    :return: Boolean value. True if input is 1, False if input is 2
+    Will return True or False based on the user input. If the input is 1, return False.
+    Otherwise, return True.
     
     '''
     print('''Do you wish to play again?
     1. Yes Play Again
     2. No Don't Play Again''')
     option = askIntegerRange('Enter an option: ', 1, 2)
-    if option == 1:
+    if option == 1: # If option 1, the program is run again
         return False
-    else:
+    else: # esle the program quits
         return True
 
 def askIntegerRange(prompt, min, max):
@@ -100,50 +100,70 @@ def check_win(list, mode, computer):
     print("You won!") if computer else print("The computer won!")
     return True
 
-def get_computer_move(list):
+def get_computer_move(discs, mode):
     '''The Computer_move_function() is the function that will control how the ai works. 
     The decisions are based on the Nim sum were if a move to make the Nim sum of the current 
     configuration to 0 then it is taken, if it is impossible to get to a Nim sum of 0 then 
     a random pile is selected and a random about with the range of the items contained in 
     that pile is removed.
     '''
-    if mode:
-        num_piles_greater_one = sum(1 for x in list if x > 1)
-        # We only need to apply misere strategy if there is one or fewer piles with more than one piece. Otherwise continue as normal.
-        if num_piles_greater_one <= 1:
-            # Get the number of piles with tokens still on them
-            piles_left = sum(1 for x in list if x > 0)
-            # Get the size of the largest pile
-            max_size = max(list)
-            # Get the index of the largest pile
-            max_idx = list.index(max_size)
-            # If there are an even number of piles left or the largest pile is of size 1, empty the pile
-            if piles_left % 2 == 0 or max_size == 1:
-                list[max_idx] -= max_size
-                print(f"The computer removed {max_size} from pile {max_idx}.")
-            # Otherwise, reduce the largest pile to size 1
-            else:
-                list[max_idx] -= max_size-1
-                print(
-                    f"The computer removed {max_size-1} from pile {max_idx}.")
-            return list
+    selectHeap = random.randint(HEAP_MIN, HEAP_MAX)    # used to select a random heap.
+    selectItemAmount = -1                       # -1 is just a placeholder. Will be changed below
 
-    # Try to make a move that makes the nim sum zero
-    for idx, val in enumerate(list):
-        # xor nim sum value with current pile
-        xor_val = group_nimsum(list) ^ val
-        # If the xor value is less than the value of the pile, make the xor value the new value for the pile
-        if xor_val < val:
-            old_val = val
-            list[idx] = xor_val
-            # If the new nim sum is zero, make the move
-            if group_nimsum(list) == 0:
-                print(
-                    f"The computer removed {old_val-xor_val} from pile {idx}.")
-                return list
-            # If the new nim sum wasn't zero, restore the old value and move to the next pile
-            list[idx] = old_val
-     # If no valid nim sum zeroing move was found, remove a random number from a random stack
+
+    if group_nimsum(discs) == 0:   # If the current Nim sum is 0, the bot is in disadvantage
+        selectItemAmount = random.randrange(1, discs[selectHeap] + 1)   # Select random amount of items to be removed
+    else:   # If the current Nim sum does not equal to 0, this method will find a move that makes it 0
+        attempted = []                                                  # List to store attempted bad heap choice
+        emptyHeaps = [i for i in range(len(discs)) if discs[i] == 0]    # List to store indices of empty heaps
+        heapIndices = [i for i in range(len(discs)) if i != 0]          # List to store indices of heaps that are not empty
+        nonEmptyHeaps = len(discs) - len(emptyHeaps)                    # Variable to store the number of heaps that are not empty
+
+        # If there are only 1 item in all heaps, remove the whole heap randomly
+        if nonEmptyHeaps == sum(discs):
+            selectHeap = random.randrange(discs, emptyHeaps)
+            selectItemAmount = 1    # Only 1 as there is only 1 item left in the heap
+
+        while selectItemAmount == -1:
+            if not mode:
+                for i in range(discs[selectHeap]):
+                    tempHeaps = discs.copy()        # Temporary heaps for checking Nim sum after moving
+                    tempHeaps[selectHeap] -= i + 1  # Remove i + 1 items from tempHeaps at index selectHeap
+                    if getNimSum(tempHeaps) == 0:   # Checks if after removing the items in tempHeaps makes the Nim sum 0
+                        selectItemAmount = i + 1    # If yes, then assign i + 1 to selectItemAmount. It will be returned later
+                        break                       # Break the while loop as a good move has been found (Nim sum == 0)
+                if selectItemAmount == -1:                          # If this check is executed, that means no good move exist in selected heap
+                    attempted.append(selectHeap)                    # Add the selected heap to attempted list
+                    selectHeap = selectRandomHeap(discs, attempted) # Choose a new heap. Excluding the previous selected heap
+            else:
+                # A list that stores indices of heaps that has only 1 item
+                singleItemHeaps = [i for i in range(len(heaps)) if heaps[i] == 1]
+                if nonEmptyHeaps == 1:
+                    selectItemAmount = heaps[selectHeap] - 1
+                elif nonEmptyHeaps == 2:
+                    if len(singleItemHeaps) == 1:
+                        if heaps[selectHeap] == 1:
+                            attempted.append(selectHeap)
+                            selectHeap = random.randrange(heaps, attempted)
+                        selectItemAmount = heaps[selectHeap]
+                    else:
+                        selectItemAmount = heaps[selectHeap] - (heaps[selectHeap] - 1)
+                else:
+                    if nonEmptyHeaps == 3 and len(singleItemHeaps) == 2:
+                        selectHeap = random.randrange(heaps, singleItemHeaps)
+                        selectItemAmount = heaps[selectHeap] - 1
+                    else:
+                        for i in range(heaps[selectHeap]):
+                            tempHeaps = heaps.copy()        # Temporary heaps for checking Nim sum after moving
+                            tempHeaps[selectHeap] -= i + 1  # Remove i + 1 items from tempHeaps at index selectHeap
+                            if getNimSum(tempHeaps) == 0:   # Checks if after removing the items in tempHeaps makes the Nim sum 0
+                                selectItemAmount = i + 1    # If yes, then assign i + 1 to selectItemAmount. It will be returned later
+                                break                       # Break the while loop as a good move has been found (Nim sum == 0)
+                        if selectItemAmount == -1:                          # If this check is executed, that means no good move exist in selected heap
+                            attempted.append(selectHeap)                    # Add the selected heap to attempted list
+                            selectHeap = random.randrange(heaps, attempted) # Choose a new heap. Excluding the previous selected heap
+
+    # Return the index of selected heap and the amount of items to be removed from the selected heap
     while True:
         pile = random.randint(0, len(list)-1)
         if list[pile] != 0:
@@ -153,15 +173,17 @@ def get_computer_move(list):
             return list
 
 def get_user_move(list):
-    # Get the user's move
-    pile = 0
-    numdiscs = 0
+    '''The User move function is what accepts the users inputted pile, if it’s in range,
+    and asks for the number of items they wish to remove from the said pile and removes 
+    them before ending there turn. '''
+    pile = 0 #assigns 0 to int pile
+    numdiscs = 0 #assigns 0 to the number of discs
     while True:
         # Try-catch here to handle the integer conversion
         try:
             pile = int(
-                input(f"Which pile do you want to take from? (0-{len(list)-1}):  "))
-            if pile < 0 or pile > len(list)-1 or list[pile] < 1:
+                input(f"Which pile do you want to take from? (0-{len(list)-1}):  ")) #asks user for input
+            if pile < 0 or pile > len(list)-1 or list[pile] < 1: #checks if input is vaild and is with in range
                 print(
                     "Pile number must be within range and have at least one item in the pile")
             else:
@@ -171,13 +193,13 @@ def get_user_move(list):
     while True:
         try:
             numdiscs = int(
-                input(f"How many discs do you want to take? (1-{list[pile]}):  "))
-            if numdiscs > 0 and numdiscs <= list[pile]:
+                input(f"How many discs do you want to take? (1-{list[pile]}):  "))#asks user for input
+            if numdiscs > 0 and numdiscs <= list[pile]: #checks if input is vaild and is with in range
                 break
         except:
             print("Invalid selection!")
-    # Take the discs off the pile
-    list[pile] -= numdiscs
+            
+    list[pile] -= numdiscs  #removes the inputted number of  discs off the selected heap
     print(f"You removed {numdiscs} from pile {pile}.\n")
     return list
 
