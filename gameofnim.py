@@ -1,9 +1,80 @@
+'''
+This code is a mixture combination of some my own code and had taken reference or piece of code from the following:
+Geeks for Geeks (Geeks for Geeks 2020),
+Jason andrea (andrea 2020),
+Batterystaples (Batterystaples 2019),
+KimlyTor (KimlyTor 2019).'''
+
 import random #module implements pseudo-random number generators for various distributions.
 import time #This module provides various time-related functions.
 import os #This module provides a portable way of using operating system dependent functionalit
 import sys #This module provides access to some variables used or maintained by the interpreter and to functions that interact strongly with the interpreter
 
+def getGameMode():
+    '''
+    Function to get the user an option of which game mode, they would like to play. The two game modes are:
+    Normal, where the winner is the player that removes remaining items, and
+    Misere, the opposite of normal mode. The last player to move is the loser.
+    Will return False if the user chooses to play in normal mode, True otherwise.
+    The third option avaliable to the user is the quit option which will stop the program
+    :return: Boolean value for game mode
+    '''
 
+    #Prints menu for user 
+    print('=' * 20)
+    print('''WELCOME TO THE GAME OF NIM!
+    SELECT GAME MODE
+    1. Normal - The last player to remove wins
+    2. Misere - The last player to remove loses
+    3. Quit''')
+    print('=' * 20)
+
+    while True:
+        option = askIntegerRange('Select an option: ', 1, 3) #calls on askIntegerRange to see if input is within range.
+        if option == 1: # If option 1, Normal Game mode is selected, the returned bool is False
+            return False
+        elif option == 2: # If option 2, Misère Game mode is selected, the returned bool is True
+            return True
+        elif option == 3:  # If option 3, Quit was selected
+            sys.exit(0) #uses sys library
+        else:
+            print('ERROR: Invalid option')  # Alerts user if they have entered an invaild number or character
+
+def askPlayAgain():
+    '''
+    Function to print and ask to the user whether the user want to play again or not.
+    Will return True or False based on the user input. If the input is 1, return True.
+    Otherwise, return False.
+    :return: Boolean value. True if input is 1, False if input is 2
+    '''
+    print('''Do you wish to play again?
+    1. Yes Play Again
+    2. No Don't Play Again''')
+    option = askIntegerRange('Enter an option: ', 1, 2)
+    if option == 1:
+        return False
+    else:
+        return True
+
+def askIntegerRange(prompt, min, max):
+    '''
+    Function to ask the user for an integer input within range min and max.
+    Will keep asking the user until the input is valid.
+    Invalid input is when the input is not an integer or out of range.
+    :param prompt: The prompt messsage to ask the user
+    :param min: The minimum integer value this function accepts
+    :param max: The maximum integer value this function accepts
+    :return: The validated user input
+    '''
+    while True:
+        try:
+            result = int(input(prompt))
+            if result < min or result > max:
+                raise ValueError
+            return result
+        except ValueError:
+            print('ERROR: Invalid input.')
+            print('Your number must be between ' + str(min) + ' and ' + str(max))
 def check_empty(list):
     for i in list:
         if i != 0:
@@ -134,71 +205,7 @@ def generateHeaps():
         discs[idx] += 1
     return discs
 
-def getGameMode():
-    '''
-    Function to get the game mode. There are two game modes available.
-    Normal, where the winner is the player that removes remaining items, and
-    Misere, the opposite of normal mode. The last player to move is the loser.
-    Will return False if the user chooses to play in normal mode, True otherwise.
-    Choosing 3 from the menu will stop the program
-    :return: Boolean value for game mode
-    '''
 
-    #Prints menu for user
-    print('=' * 20)
-    print('''WELCOME TO THE GAME OF NIM!
-    SELECT GAME MODE
-    1. Normal - The last player to remove wins
-    2. Misere - The last player to remove loses
-    3. Quit''')
-    print('=' * 20)
-
-    while True:
-        option = askIntegerRange('Select an option: ', 1, 3) #calls on askIntegerRange to see if input is within range.
-        if option == 1:
-            return False
-        elif option == 2:
-            return True
-        elif option == 3:
-            sys.exit(0) #uses sys library
-        else:
-            print('ERROR: Invalid option')
-
-def askPlayAgain():
-    '''
-    Function to print and ask to the user whether the user want to play again or not.
-    Will return True or False based on the user input. If the input is 1, return True.
-    Otherwise, return False.
-    :return: Boolean value. True if input is 1, False if input is 2
-    '''
-    print('''Do you wish to play again?
-    1. Yes
-    2. No''')
-    option = askIntegerRange('Enter an option: ', 1, 2)
-    if option == 1:
-        return False
-    else:
-        return True
-
-def askIntegerRange(prompt, min, max):
-    '''
-    Function to ask the user for an integer input within range min and max.
-    Will keep asking the user until the input is valid.
-    Invalid input is when the input is not an integer or out of range.
-    :param prompt: The prompt messsage to ask the user
-    :param min: The minimum integer value this function accepts
-    :param max: The maximum integer value this function accepts
-    :return: The validated user input
-    '''
-    while True:
-        try:
-            result = int(input(prompt))
-            if result < min or result > max:
-                raise ValueError
-            return result
-        except ValueError:
-            print('ERROR: Invalid input.')
-            print('Your number must be between ' + str(min) + ' and ' + str(max))
 
 # Constants
 HEAP_MIN = 2   # The minimum amount of heaps
