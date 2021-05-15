@@ -2,8 +2,7 @@
 This code is a mixture combination of some my own code and had taken reference or piece of code from the following:
 Geeks for Geeks (Geeks for Geeks 2020),
 Jason andrea (andrea 2020),
-Batterystaples (Batterystaples 2019),
-KimlyTor (KimlyTor 2019).'''
+Batterystaples (Batterystaples 2019)'''
 
 import random #module implements pseudo-random number generators for various distributions.
 import time #This module provides various time-related functions.
@@ -46,6 +45,7 @@ def askPlayAgain():
     Will return True or False based on the user input. If the input is 1, return True.
     Otherwise, return False.
     :return: Boolean value. True if input is 1, False if input is 2
+    
     '''
     print('''Do you wish to play again?
     1. Yes Play Again
@@ -83,7 +83,7 @@ def check_empty(list):
 
 def check_win(list, mode, computer):
     '''
-    Function to declare the winner of the match.
+    This function is used to declare the winner of the match.
     If playerMoveState is True, that means the last move was made by CPU. Hence, the CPU won the game.
     Otherwise, this procedure will announce that the player won the game.
     :param playerMoveState: Current player move state, from player1ToMove
@@ -101,6 +101,12 @@ def check_win(list, mode, computer):
     return True
 
 def get_computer_move(list):
+    '''The Computer_move_function() is the function that will control how the ai works. 
+    The decisions are based on the Nim sum were if a move to make the Nim sum of the current 
+    configuration to 0 then it is taken, if it is impossible to get to a Nim sum of 0 then 
+    a random pile is selected and a random about with the range of the items contained in 
+    that pile is removed.
+    '''
     if mode:
         num_piles_greater_one = sum(1 for x in list if x > 1)
         # We only need to apply misere strategy if there is one or fewer piles with more than one piece. Otherwise continue as normal.
@@ -177,33 +183,36 @@ def get_user_move(list):
 
 
 def group_nimsum(list):
-    # The nimsum is the xor of the number of discs in each pile
+    ''' Used to calculate the Nim sum 
+    '''
     sum = 0
     for item in list:
-        sum ^= item
-    return sum
+        sum ^= item # Get the Nim sum for the heaps
+    return sum # Return the calculated Nim sum
 
 def print_board(list):
+    '''The print board function() is the procedure that prints all heaps and items inside each heaps on screen for user to see'''
     for i, j in enumerate(list):
-        print(f"Pile {i}: {j}")
-    print()
+        print(f"Pile {i}: {j}")  #prints heap and it's accompanying items
+    print() #prints blank line
 
 def generateHeaps():
-    numPiles = random.randint(HEAP_MIN, HEAP_MAX) #Constant MIN 2 & MAX 5
+    '''
+    Procedure to generate random amount of heaps and items for each heap.
+    The number of heap is random from between the min to max constants, and
+    the number of items in each heap is random from 2N+1 to 2N+5
+    :return: The generated heap including all items inside each heaps
+    '''
+    heapAmount = random.randint(HEAP_MIN, HEAP_MAX)    # Constant MIN 2 & MAX. 5 Randomly generate 2-5 piles
+    itemsEachHeap = []                     # Empty list to store the number of items each heap
 
-    totalItems = random.randint(numPiles+1, numPiles*4)
-
-    # Initialise piles with 1 token each
-    discs = [1] * numPiles
-
-    # Distribute tokens randomly amongst piles
-    for i in range(totalItems):
+    for i in range(heapAmount):
         if i == 0:
-            discs = [1] * numPiles
+            itemsEachHeap.append(1) #makes sure heap has at least 1 item
         else:
-        idx = random.randint(1, numPiles+1)
-        discs[idx] += 1
-    return discs
+            itemsEachHeap.append(2 * (i) + 1)
+
+    return itemsEachHeap #return the list
 
 
 
@@ -211,20 +220,20 @@ def generateHeaps():
 HEAP_MIN = 2   # The minimum amount of heaps
 HEAP_MAX = 5   # The maximum amount of heaps
 
-computerMove = False
-gameOver = False
-discs = initialise_piles()   
-mode = getGameMode()
-while not gameOver:
-    print_board(discs)
+computerMove = False # Makes user start first
+gameOver = False # If this is False, then the game will run. Otherwise, the game will not run
+discs = generateHeaps()  # will assign variable with a random amount of heaps which have a random amount of items in them using generateHeaps function
+mode = getGameMode() #sets game mode to either Normal or misere
+while not gameOver: # If this is True, then the game will run. Otherwise, the game will not run
+    print_board(discs) # prints all heaps and items inside each heaps
     print('=' * 30)
     if not computerMove:
-        discs = get_user_move(discs)
+        discs = get_user_move(discs) # preforms users turn
     else:
-        discs = get_computer_move(discs)
-    gameOver = check_win(discs, mode, computerMove)
-    computerMove = not computerMove
-
-gameOver = askPlayAgain()
+        discs = get_computer_move(discs) #computers turn
+    gameOver = check_win(discs, mode, computerMove) # At this point, there are no items left. The game ends
+    computerMove = not computerMove # Sets turn back to user
+    if gameOver == True:
+        gameOver = askPlayAgain() # Ask whether the user want to have another game
 
             
