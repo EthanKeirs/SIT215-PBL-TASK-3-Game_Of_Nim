@@ -1,87 +1,79 @@
-import random
-import sys
-
-def getGameMode():
-    print('=' * 20)
-    print('''WELCOME TO THE GAME OF NIM!
-    PLEASE SELECT DESIRED GAME MODE
-    1. Normal - The last player to remove wins
-    2. Misere - The last player to remove loses
-    3. Quit''')
-    print('=' * 20)
-    option = askIntegerRange('Select an option: ', 1, 3)
-    if option == 1:
-        mode = False
-    elif option == 2:
-        mode = True
-    elif option == 3:
-        sys.exit(0)
-    return option
-
-def askIntegerRange(prompt, min, max):
-    '''
-    Function to ask the user for an integer input within range min and max.
-    Will keep asking the user until the input is valid.
-    Invalid input is when the input is not an integer or out of range.
-    :param prompt: The prompt messsage to ask the user
-    :param min: The minimum integer value this function accepts
-    :param max: The maximum integer value this function accepts
-    :return: The validated user input
-    '''
-    while True:
-        try:
-            result = int(input(prompt))
-            if result < min or result > max:
-                raise ValueError
-            return result
-        except ValueError:
-            print('ERROR: Invalid input.')
-            print('Your number must be between ' + str(min) + ' and ' + str(max)+ ' inclusive.')
+import random #module implements pseudo-random number generators for various distributions.
+import time #This module provides various time-related functions.
+import os #This module provides a portable way of using operating system dependent functionalit
+import sys #This module provides access to some variables used or maintained by the interpreter and to functions that interact strongly with the interpreter
 
 
-def askPlayAgain():
+def check_empty(list):
+    for i in list:
+        if i != 0:
+            return False
+    return True
+
+def check_win(list, mode, computer):
     '''
-    Function to print and ask to the user whether the user want to play again or not.
-    Will return True or False based on the user input. If the input is 1, return True.
-    Otherwise, return False.
-    :return: Boolean value. True if input is 1, False if input is 2
+    Function to declare the winner of the match.
+    If playerMoveState is True, that means the last move was made by CPU. Hence, the CPU won the game.
+    Otherwise, this procedure will announce that the player won the game.
+    :param playerMoveState: Current player move state, from player1ToMove
+    :param misereMode: The game mode
+    :return:nothing
     '''
-    print('''Do you wish to play again?
-    1. Yes
-    2. No''')
-    option = askIntegerRange('Enter an option: ', 1, 2)
-    if option == 1:
-        return True
-    else:
+    empty = check_empty(list)
+    if not empty:
         return False
+    # For a normal game, a shortcut we can take here is just flipping who made the last turn.
+    # Saves a few checks :)
+    if not mode:
+        computer = not computer
+    print("You won!") if computer else print("The computer won!")
+    return True
 
+def get_computer_move(list):
+    if mode:
+        num_piles_greater_one = sum(1 for x in list if x > 1)
+        # We only need to apply misere strategy if there is one or fewer piles with more than one piece. Otherwise continue as normal.
+        if num_piles_greater_one <= 1:
+            # Get the number of piles with tokens still on them
+            piles_left = sum(1 for x in list if x > 0)
+            # Get the size of the largest pile
+            max_size = max(list)
+            # Get the index of the largest pile
+            max_idx = list.index(max_size)
+            # If there are an even number of piles left or the largest pile is of size 1, empty the pile
+            if piles_left % 2 == 0 or max_size == 1:
+                list[max_idx] -= max_size
+                print(f"The computer removed {max_size} from pile {max_idx}.")
+            # Otherwise, reduce the largest pile to size 1
+            else:
+                list[max_idx] -= max_size-1
+                print(
+                    f"The computer removed {max_size-1} from pile {max_idx}.")
+            return list
 
-def generateHeaps(min, max):
-    '''
-    Procedure to generate random amount of heaps and items for each heap.
-    The number of heap is random from min to max piles, and
-    the number of items in each heap is random from 2N+1 to 2N+5
-    :param min: The minimum number for the random generated number
-    :param max: The maximum number for the random generated number, exclusive
-    :return: The generated heap including all items inside each heaps
-    '''
-    heapAmount = random.randrange(2, 6)    # Randomly generate 2-5 piles
-    itemsEachHeap = []                     # Empty list to store the number of items each heap
-
-    # Randomly generate the number of items each heap
-    for i in range(heapAmount):
-        if i == 0:
-            itemsEachHeap.append(1)
-        else:
-            itemsEachHeap.append(2 * (i) + 1)
-
-    return itemsEachHeap
-
-def print_board(list):
-    for i, j in enumerate(list):
-        print(f"Pile {i}: {j}")
-    print()
-
+    # Try to make a move that makes the nim sum zero
+    for idx, val in enumerate(list):
+        # xor nim sum value with current pile
+        xor_val = group_nimsum(list) ^ val
+        # If the xor value is less than the value of the pile, make the xor value the new value for the pile
+        if xor_val < val:
+            old_val = val
+            list[idx] = xor_val
+            # If the new nim sum is zero, make the move
+            if group_nimsum(list) == 0:
+                print(
+                    f"The computer removed {old_val-xor_val} from pile {idx}.")
+                return list
+            # If the new nim sum wasn't zero, restore the old value and move to the next pile
+            list[idx] = old_val
+     # If no valid nim sum zeroing move was found, remove a random number from a random stack
+    while True:
+        pile = random.randint(0, len(list)-1)
+        if list[pile] != 0:
+            num = random.randint(1, list[pile])
+            list[pile] -= num
+            print(f"The computer removed {num} from pile {pile}.")
+            return list
 
 def get_user_move(list):
     # Get the user's move
@@ -112,119 +104,101 @@ def get_user_move(list):
     print(f"You removed {numdiscs} from pile {pile}.\n")
     return list
 
-def check_empty(list):
-    for i in list:
-        if i != 0:
+
+def group_nimsum(list):
+    # The nimsum is the xor of the number of discs in each pile
+    sum = 0
+    for item in list:
+        sum ^= item
+    return sum
+
+def print_board(list):
+    for i, j in enumerate(list):
+        print(f"Pile {i}: {j}")
+    print()
+
+def generateHeaps():
+    numPiles = random.randint(HEAP_MIN, HEAP_MAX) #Constant MIN 2 & MAX 5
+
+    totalItems = random.randint(numPiles+1, numPiles*4)
+
+    # Initialise piles with 1 token each
+    discs = [1] * numPiles
+
+    # Distribute tokens randomly amongst piles
+    for i in range(totalItems):
+        if i == 0:
+            discs = [1] * numPiles
+        else:
+        idx = random.randint(1, numPiles+1)
+        discs[idx] += 1
+    return discs
+
+def getGameMode():
+    '''
+    Function to get the game mode. There are two game modes available.
+    Normal, where the winner is the player that removes remaining items, and
+    Misere, the opposite of normal mode. The last player to move is the loser.
+    Will return False if the user chooses to play in normal mode, True otherwise.
+    Choosing 3 from the menu will stop the program
+    :return: Boolean value for game mode
+    '''
+
+    #Prints menu for user
+    print('=' * 20)
+    print('''WELCOME TO THE GAME OF NIM!
+    SELECT GAME MODE
+    1. Normal - The last player to remove wins
+    2. Misere - The last player to remove loses
+    3. Quit''')
+    print('=' * 20)
+
+    while True:
+        option = askIntegerRange('Select an option: ', 1, 3) #calls on askIntegerRange to see if input is within range.
+        if option == 1:
             return False
-    return True
+        elif option == 2:
+            return True
+        elif option == 3:
+            sys.exit(0) #uses sys library
+        else:
+            print('ERROR: Invalid option')
 
-def check_win(list, mode, computer):
-    empty = check_empty(list)
-    if not empty:
+def askPlayAgain():
+    '''
+    Function to print and ask to the user whether the user want to play again or not.
+    Will return True or False based on the user input. If the input is 1, return True.
+    Otherwise, return False.
+    :return: Boolean value. True if input is 1, False if input is 2
+    '''
+    print('''Do you wish to play again?
+    1. Yes
+    2. No''')
+    option = askIntegerRange('Enter an option: ', 1, 2)
+    if option == 1:
         return False
-    # For a normal game, a shortcut we can take here is just flipping who made the last turn.
-    # Saves a few checks :)
-    if not mode:
-        computer = not computer
-    print("You won!") if computer else print("The computer won!")
-    return True
+    else:
+        return True
 
-def getNimSum(heaps):
+def askIntegerRange(prompt, min, max):
     '''
-    Function to calculate the Nim sum of current item configuration
-    for all heaps. This method is used for the AI opponent to calculate
-    a good move.
-    :param heaps: The heaps for this method to get the Nim sum
-    :return: The Nim sum of the passed heaps
+    Function to ask the user for an integer input within range min and max.
+    Will keep asking the user until the input is valid.
+    Invalid input is when the input is not an integer or out of range.
+    :param prompt: The prompt messsage to ask the user
+    :param min: The minimum integer value this function accepts
+    :param max: The maximum integer value this function accepts
+    :return: The validated user input
     '''
-    heapAmount = len(heaps)         # Get the amount of heaps
-    nimSum = heaps[0] ^ heaps[1]    # Get the Nim sum for the first two heaps
-
-    # If there are more than three heaps, calculate Nim sum for heap #3 and more
-    if heapAmount > 2:
-        i = 2
-        while i < heapAmount:
-            nimSum = nimSum ^ heaps[i]
-            i += 1
-
-    # Return the calculated Nim sum
-    return nimSum
-
-def get_computer_move(list):
-    '''
-    This function is the brain of the AI opponent. This function will return the index of heap selected
-    and the amount of items to be removed from the selected heap. The decisions are based on the Nim sum.
-    This method will try to find a move that makes the Nim sum of the current configuration to 0.
-    If it is impossible to get Nim sum of 0 after the AI opponent's move, then the AI will move randomly.
-    :param heaps: The heaps for the AI opponent to decide
-    :param misereMode: If the game is running in Misere mode, decision will be adjusted
-    :return: The index of selected heap, the amount of item to be removed from the selected heap
-    '''
-    
-    selectHeap = random.randint(0, len(list)-1)    # Select a random heap. No exclusion
-    selectItemAmount = -1                       # -1 is just a placeholder. Will be changed below
-
-
-    if getNimSum(heaps) == 0:   # If the current Nim sum is 0, the bot is in disadvantage
-        selectItemAmount = random.randrange(1, heaps[selectHeap] + 1)   # Select random amount of items to be removed
-    else:   # If the current Nim sum does not equal to 0, this method will find a move that makes it 0
-        attempted = []                                                  # List to store attempted bad heap choice
-        emptyHeaps = [i for i in range(len(heaps)) if heaps[i] == 0]    # List to store indices of empty heaps
-        heapIndices = [i for i in range(len(heaps)) if i != 0]          # List to store indices of heaps that are not empty
-        nonEmptyHeaps = len(heaps) - len(emptyHeaps)                    # Variable to store the number of heaps that are not empty
-
-        # If there are only 1 item in all heaps, remove the whole heap randomly
-        if nonEmptyHeaps == sum(heaps):
-            selectHeap = selectRandomHeap(heaps, emptyHeaps)
-            selectItemAmount = 1    # Only 1 as there is only 1 item left in the heap
-
-        while selectItemAmount == -1:
-            if not mode:
-                for i in range(heaps[selectHeap]):
-                    tempHeaps = heaps.copy()        # Temporary heaps for checking Nim sum after moving
-                    tempHeaps[selectHeap] -= i + 1  # Remove i + 1 items from tempHeaps at index selectHeap
-                    if getNimSum(tempHeaps) == 0:   # Checks if after removing the items in tempHeaps makes the Nim sum 0
-                        selectItemAmount = i + 1    # If yes, then assign i + 1 to selectItemAmount. It will be returned later
-                        break                       # Break the while loop as a good move has been found (Nim sum == 0)
-                if selectItemAmount == -1:                          # If this check is executed, that means no good move exist in selected heap
-                    attempted.append(selectHeap)                    # Add the selected heap to attempted list
-                    selectHeap = selectRandomHeap(heaps, attempted) # Choose a new heap. Excluding the previous selected heap
-            else:
-                # A list that stores indices of heaps that has only 1 item
-                singleItemHeaps = [i for i in range(len(heaps)) if heaps[i] == 1]
-                if nonEmptyHeaps == 1:
-                    selectItemAmount = heaps[selectHeap] - 1
-                elif nonEmptyHeaps == 2:
-                    if len(singleItemHeaps) == 1:
-                        if heaps[selectHeap] == 1:
-                            attempted.append(selectHeap)
-                            selectHeap = selectRandomHeap(heaps, attempted)
-                        selectItemAmount = heaps[selectHeap]
-                    else:
-                        selectItemAmount = heaps[selectHeap] - (heaps[selectHeap] - 1)
-                else:
-                    if nonEmptyHeaps == 3 and len(singleItemHeaps) == 2:
-                        selectHeap = selectRandomHeap(heaps, singleItemHeaps)
-                        selectItemAmount = heaps[selectHeap] - 1
-                    else:
-                        for i in range(heaps[selectHeap]):
-                            tempHeaps = heaps.copy()        # Temporary heaps for checking Nim sum after moving
-                            tempHeaps[selectHeap] -= i + 1  # Remove i + 1 items from tempHeaps at index selectHeap
-                            if getNimSum(tempHeaps) == 0:   # Checks if after removing the items in tempHeaps makes the Nim sum 0
-                                selectItemAmount = i + 1    # If yes, then assign i + 1 to selectItemAmount. It will be returned later
-                                break                       # Break the while loop as a good move has been found (Nim sum == 0)
-                        if selectItemAmount == -1:                          # If this check is executed, that means no good move exist in selected heap
-                            attempted.append(selectHeap)                    # Add the selected heap to attempted list
-                            selectHeap = selectRandomHeap(heaps, attempted) # Choose a new heap. Excluding the previous selected heap
-
-    # Return the index of selected heap and the amount of items to be removed from the selected heap
-    #return selectHeap, selectItemAmount
-
-    # Take the discs off the pile
-    list[selectHeap] -= selectItemAmount
-    print(f"Computer removed {numdiscs} from pile {pile}.\n")
-    return list
-
+    while True:
+        try:
+            result = int(input(prompt))
+            if result < min or result > max:
+                raise ValueError
+            return result
+        except ValueError:
+            print('ERROR: Invalid input.')
+            print('Your number must be between ' + str(min) + ' and ' + str(max))
 
 # Constants
 HEAP_MIN = 2   # The minimum amount of heaps
@@ -232,19 +206,18 @@ HEAP_MAX = 5   # The maximum amount of heaps
 
 computerMove = False
 gameOver = False
-itemsEachHeap = generateHeaps(HEAP_MIN, HEAP_MAX + 1)   
+discs = initialise_piles()   
 mode = getGameMode()
 while not gameOver:
-    print_board(itemsEachHeap)
+    print_board(discs)
     print('=' * 30)
     if not computerMove:
-        discs = get_user_move(itemsEachHeap)
+        discs = get_user_move(discs)
     else:
-        discs = get_computer_move(itemsEachHeap)
-    gameOver = check_win(itemsEachHeap, mode, computerMove)
-    computerMove = True
+        discs = get_computer_move(discs)
+    gameOver = check_win(discs, mode, computerMove)
+    computerMove = not computerMove
 
 gameOver = askPlayAgain()
-
 
             
