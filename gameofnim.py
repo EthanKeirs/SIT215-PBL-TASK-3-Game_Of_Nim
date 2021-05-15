@@ -252,7 +252,7 @@ while not gameOver: # If this is True, then the game will run. Otherwise, the ga
     if not computerMove:
         discs = get_user_move(discs) # preforms users turn
     else:
-        discs = get_computer_move(discs) #computers turn
+        discs = get_computer_move(discs, mode) #computers turn
     gameOver = check_win(discs, mode, computerMove) # At this point, there are no items left. The game ends
     computerMove = not computerMove # Sets turn back to user
     if gameOver == True:
